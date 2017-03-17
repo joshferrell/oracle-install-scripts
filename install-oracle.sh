@@ -25,8 +25,8 @@ echo "Creating the oracle directory in root."
 mkdir -p /opt/oracle
 
 echo "Unzipping oracle instant client packages."
-unzip ./oracle-source/macOS/instantclient-basic-macos.x64-12.1.0.2.0.zip
-unzip ./oracle-source/macOS/instantclient-sdk-macos.x64-12.1.0.2.0.zip
+unzip ./instantclient-basic-macos.x64-12.1.0.2.0.zip
+unzip ./instantclient-sdk-macos.x64-12.1.0.2.0.zip
 
 mv ./instantclient_12_1 /opt/oracle/instantclient
 cd /opt/oracle/instantclient
