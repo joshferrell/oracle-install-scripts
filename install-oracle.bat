@@ -1,31 +1,69 @@
-AT > NUL
+@echo off
+
+NET SESSION >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
-    ECHO you are Administrator
+    ECHO You are not an administrator, Please run the program again as an admin.
+    PAUSE
     EXIT \B 1
 )
 
-REM Install visual studio if not already installed
-for /f "delims=" %%i in ('where visualstudio2015') do set output=%%i
-IF [%output%] NEQ [] choco install visualstudio2015community
+SET visualstudio=false
+ECHO Checking if visual studio 2015 is installed
 
-REM Install python if not already installed
-for /f "delims=" %%i in ('where python') do set output=%%i
-IF [%output%] NEQ [] choco install python2
+reg query HKLM\SOFTWARE\Classes\Installer\Dependencies\{050d4fc8-5d48-4b8f-8972-47c82c46020f}
+IF %ERRORLEVEL% NEQ 0 (
+    SET visualstudio=true
+)
 
-REM Install NVM if not already installed
-for /f "delims=" %%i in ('where nvm') do set output=%%i
-IF [%output%] NEQ [] choco install nvm
+reg query HKLM\SOFTWARE\Classes\Installer\Dependencies\{f65db027-aff3-4070-886a-0d87064aabb1}
+IF %ERRORLEVEL% NEQ 0 (
+    SET visualstudio=true
+)
 
-nvm use 0.12.7
+IF "%visualstudio%" == true (
+    ECHO Installing visual studio code ...
+    choco install -y visualstudio2013community
+)
 
-REM needs to unzip and setup instant client directories
+ECHO Checking if python is installed
+python --version 2>NUL
+if errorlevel 1 (
+    ECHO Installing python 2.x ...
+    choco install -y python2
+)
 
-unzip -o "oracle-source\windows\instantclient_basic-windows.x64-12.1.0.2.0.zip" -d "instantclient"
-unzip -o "oracle-source\windows\instantclient_sdk-windows.x64-12.1.0.2.0.zip" -d "instantclient\sdk"
+ECHO Checking if node version manager is installed
+nvm > NUL
+if errorlevel 1 (
+    ECHO Installing Node Version Manager for Windows
+    choco install -y nvm
+)
+
+ECHO Checking if 7zip is installed
+7z > NUL
+if errorlevel 1 (
+    ECHO Installing 7zip
+    choco install -y 7zip
+    SETX PATH "C:\Program Files (x86)\7-Zip;%path%;"
+)
+
+SETX PATH "C:\Oracle\instantclient;%path%;"
+
+ECHO extracting instantclient
+7z x -aoa -r -tzip instantclient-basic-windows.x64-12.1.0.2.0.zip
+7z x -aoa -r -tzip instantclient-sdk-windows.x64-12.1.0.2.0.zip -osdk
+RENAME instantclient_12_1 instantclient
+MOVE sdk instantclient
 
 MD C:\Oracle
 MOVE instantclient C:\Oracle
 
-SET PATH=%PATH%;C:\Oracle\instantclient
-SET OCI_LIB_DIR=C:\Oracle\instantclient\sdk\lib\msvc
-SET OCI_INC_DIR=C:\Oracle\instantclient\sdk\include
+SETX OCI_LIB_DIR C:\Oracle\instantclient\sdk\lib\msvc
+SETX OCI_INC_DIR C:\Oracle\instantclient\sdk\include
+
+ECHO Changing current node version to 0.12.7; If you are using a newer version of node for a different project, use `nvm use latest`
+start cmd /k (
+    nvm on
+    nvm install 0.12.7
+    nvm use 0.12.7
+)
